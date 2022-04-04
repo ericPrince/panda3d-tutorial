@@ -1,0 +1,43 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pipenv-check
+        name: pipenv-check
+        language: system
+        entry: pipenv check
+        files: Pipfile(\.lock)?|setup\.(py|cfg)
+        pass_filenames: false
+      - id: black
+        name: black
+        language: system
+        entry: pipenv run black
+#        require_serial: true
+        types_or: [python, pyi]
+      - id: isort
+        name: isort
+        language: system
+        entry: pipenv run isort
+        types_or: [python]
+      - id: flake8
+        name: flake8
+        language: system
+        entry: pipenv run flake8
+        types_or: [python, pyi]
+      - id: bandit
+        name: bandit
+        language: system
+        entry: pipenv run bandit
+        files: src/*
+        types_or: [python]
+      - id: pydocstyle
+        name: pydocstyle
+        language: system
+        entry: pipenv run pydocstyle
+        files: src/*
+        types_or: [python, pyi]
+      - id: mypy
+        name: mypy
+        language: system
+        entry: pipenv run mypy
+        files: src/*
+        types_or: [python, pyi]
