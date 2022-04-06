@@ -1,12 +1,21 @@
 """Main tutorial app."""
 
-import math
+# import math
+from pathlib import Path
 
 from direct.actor.Actor import Actor
-from direct.interval.IntervalGlobal import Sequence
 from direct.showbase.ShowBase import ShowBase
-from direct.task import Task
-from panda3d.core import Point3
+from panda3d.core import (
+    AmbientLight,
+    DirectionalLight,
+    Vec4,
+    WindowProperties,
+    loadPrcFileData,
+)
+
+# from direct.interval.IntervalGlobal import Sequence
+# from direct.task import Task
+# from panda3d.core import Point3
 
 
 class MyApp(ShowBase):
@@ -15,43 +24,49 @@ class MyApp(ShowBase):
     def __init__(self) -> None:
         """Create a new app."""
         super().__init__()
+        self.disableMouse()
 
-        # Load the environment model.
-        scene = self.loader.loadModel("models/environment")
-        # Reparent the model to render.
-        scene.reparentTo(self.render)
-        # Apply scale and position transforms on the model.
-        scene.setScale(0.25, 0.25, 0.25)
-        scene.setPos(-8, 42, 0)
+        self.actors = []
 
-        def spin_camera_task(task: Task) -> Task.cont:
-            angle_deg = task.time * 6.0
-            angle_rad = math.radians(angle_deg)
-            self.camera.setPos(20 * math.sin(angle_rad), -20 * math.cos(angle_rad), 3)
-            self.camera.setHpr(angle_deg, 0, 0)
-            return Task.cont
+        win_props = WindowProperties()
+        win_props.setSize(1000, 750)
+        self.win.requestProperties(win_props)
 
-        # Add the spinCameraTask procedure to the task manager.
-        self.taskMgr.add(spin_camera_task, "SpinCameraTask")
+        env_model = self.loader.loadModel("environment")
+        env_model.reparentTo(self.render)
 
-        # Load and transform the panda actor.
-        panda_actor = Actor("models/panda-model", {"walk": "models/panda-walk4"})
-        panda_actor.setScale(0.005, 0.005, 0.005)
-        panda_actor.reparentTo(self.render)
-        # Loop its animation.
-        panda_actor.loop("walk")
+        panda_chan = Actor(
+            "panda_chan/act_p3d_chan",
+            {"walk": "panda_chan/a_p3d_chan_run"},
+        )
+        # actors must not go out of scope (even if in scene graph...)
+        self.actors.append(panda_chan)
+        panda_chan.reparentTo(self.render)
+        # panda_chan.setPos(0, 7, 0)
+        panda_chan.getChild(0).setH(180)
+        panda_chan.loop("walk")
 
-        Sequence(
-            panda_actor.posInterval(13, Point3(0, -10, 0), startPos=Point3(0, 10, 0)),
-            panda_actor.hprInterval(3, Point3(180, 0, 0), startHpr=Point3(0, 0, 0)),
-            panda_actor.posInterval(13, Point3(0, 10, 0), startPos=Point3(0, -10, 0)),
-            panda_actor.hprInterval(3, Point3(0, 0, 0), startHpr=Point3(180, 0, 0)),
-            name="pandaPace",
-        ).loop()
+        self.camera.setPos(0, 0, 32)
+        self.camera.setP(-90)
+
+        ambient_light = AmbientLight("ambient light")
+        ambient_light.setColor(Vec4(0.2, 0.2, 0.2, 1))
+        self.render.setLight(self.render.attachNewNode(ambient_light))
+
+        main_light = DirectionalLight("main light")
+        main_light_node_path = self.render.attachNewNode(main_light)
+        # Turn it around by 45 degrees, and tilt it down by 45 degrees
+        main_light_node_path.setHpr(45, -45, 0)
+        self.render.setLight(main_light_node_path)
+
+        self.render.setShaderAuto()
 
 
 def main() -> None:
     """Run the app."""
+    loadPrcFileData(
+        "", f"model-path {(Path(__file__).parents[2] / 'models').resolve()}"
+    )
     app = MyApp()
     app.run()
 
